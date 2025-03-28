@@ -401,13 +401,13 @@ end
 
 --------------------------------------------------
 -- Check remaining cooldown on spell (0 - Ready)
-local function IsSpellReadyIn(spellname)
+local function IsSpellReadyIn(spellname, withDelay)
     local id = SpellId(spellname)
     if id then
         local start, duration = GetSpellCooldown(id, 0)
         if start == 0
-            and duration == 0 then
-            --and FuryLastSpellCast + 1 <= GetTime() then
+            and duration == 0
+            and (not (withDelay == true) or FuryLastSpellCast + 1 <= GetTime()) then
             return 0
         end
         local remaining = duration - (GetTime() - start)
@@ -420,8 +420,8 @@ end
 
 --------------------------------------------------
 -- Return if spell is ready
-local function IsSpellReady(spellname)
-    return IsSpellReadyIn(spellname) == 0
+local function IsSpellReady(spellname, withDelay)
+    return IsSpellReadyIn(spellname, withDelay) == 0
 end
 
 --------------------------------------------------
@@ -1590,7 +1590,7 @@ function Fury()
                         and not FuryWhirlwind
                         and not FuryBloodthirst)
                     or Fury_Configuration["PrimaryStance"] == 2)
-                and IsSpellReady(ABILITY_HEROIC_STRIKE_FURY) then
+                and IsSpellReady(ABILITY_HEROIC_STRIKE_FURY, true) then
                 Debug("52. Heroic Strike")
                 CastSpellByName(ABILITY_HEROIC_STRIKE_FURY)
                 FuryLastSpellCast = GetTime()
