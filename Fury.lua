@@ -1,3 +1,4 @@
+---@diagnostic disable: undefined-global
 --[[
     Fury
 
@@ -946,6 +947,16 @@ function Fury()
             Debug("10. Insignia of the Alliance")
             UseInventoryItem(slot)
 
+            -- Bloodthirst
+        elseif FuryBloodthirst
+            and Fury_Configuration[ABILITY_BLOODTHIRST_FURY]
+            and not Fury_Configuration[MODE_HEADER_AOE]
+            and UnitMana("player") >= 30
+            and IsSpellReady(ABILITY_BLOODTHIRST_FURY) then
+            Debug("10b. Bloodthirst")
+            CastSpellByName(ABILITY_BLOODTHIRST_FURY)
+            FuryLastSpellCast = GetTime()
+
             -- Execute, this will stance dance in prot mode?
         elseif Fury_Configuration[ABILITY_EXECUTE_FURY]
             and HasWeapon()
@@ -1247,16 +1258,6 @@ function Fury()
             and IsSpellReady(ABILITY_SWEEPING_STRIKES_FURY) then
             Debug("22. Sweeping Strikes")
             CastSpellByName(ABILITY_SWEEPING_STRIKES_FURY)
-
-            -- Bloodthirst
-        elseif FuryBloodthirst
-            and Fury_Configuration[ABILITY_BLOODTHIRST_FURY]
-            and not Fury_Configuration[MODE_HEADER_AOE]
-            and UnitMana("player") >= 30
-            and IsSpellReady(ABILITY_BLOODTHIRST_FURY) then
-            Debug("23. Bloodthirst")
-            CastSpellByName(ABILITY_BLOODTHIRST_FURY)
-            FuryLastSpellCast = GetTime()
 
             -- Mortal Strike
         elseif FuryMortalStrike
