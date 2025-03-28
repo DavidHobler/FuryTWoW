@@ -406,8 +406,8 @@ local function IsSpellReadyIn(spellname)
     if id then
         local start, duration = GetSpellCooldown(id, 0)
         if start == 0
-            and duration == 0
-            and FuryLastSpellCast + 1 <= GetTime() then
+            and duration == 0 then
+            --and FuryLastSpellCast + 1 <= GetTime() then
             return 0
         end
         local remaining = duration - (GetTime() - start)
