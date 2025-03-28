@@ -384,13 +384,19 @@ end
 
 --------------------------------------------------
 -- Get spell id from name
+local spellIdByName = {}
+
 local function SpellId(spellname)
+    if (spellIdByName[spellname] ~= nil) then
+        return spellIdByName[spellname]
+    end
     local id = 1
     for i = 1, GetNumSpellTabs() do
         local _, _, _, numSpells = GetSpellTabInfo(i)
         for j = 1, numSpells do
             local spellName = GetSpellName(id, BOOKTYPE_SPELL)
             if spellName == spellname then
+                spellIdByName[spellname] = id
                 return id
             end
             id = id + 1
@@ -401,13 +407,13 @@ end
 
 --------------------------------------------------
 -- Check remaining cooldown on spell (0 - Ready)
-local function IsSpellReadyIn(spellname, withDelay)
+local function IsSpellReadyIn(spellname)
     local id = SpellId(spellname)
     if id then
         local start, duration = GetSpellCooldown(id, 0)
         if start == 0
-            and duration == 0
-            and (not (withDelay == true) or FuryLastSpellCast + 1 <= GetTime()) then
+            and duration == 0 then
+            --and FuryLastSpellCast + 1 <= GetTime() then
             return 0
         end
         local remaining = duration - (GetTime() - start)
@@ -420,8 +426,8 @@ end
 
 --------------------------------------------------
 -- Return if spell is ready
-local function IsSpellReady(spellname, withDelay)
-    return IsSpellReadyIn(spellname, withDelay) == 0
+local function IsSpellReady(spellname)
+    return IsSpellReadyIn(spellname) == 0
 end
 
 --------------------------------------------------
@@ -431,8 +437,7 @@ local function HasDebuff(unit, texturename, amount)
     while UnitDebuff(unit, id) do
         local debuffTexture, debuffAmount = UnitDebuff(unit, id)
         if string.find(debuffTexture, texturename) then
-            if (amount
-                    or 1) <= debuffAmount then
+            if (amount or 1) <= debuffAmount then
                 return true
             else
                 return false
@@ -1590,7 +1595,7 @@ function Fury()
                         and not FuryWhirlwind
                         and not FuryBloodthirst)
                     or Fury_Configuration["PrimaryStance"] == 2)
-                and IsSpellReady(ABILITY_HEROIC_STRIKE_FURY, true) then
+                and IsSpellReady(ABILITY_HEROIC_STRIKE_FURY) then
                 Debug("52. Heroic Strike")
                 CastSpellByName(ABILITY_HEROIC_STRIKE_FURY)
                 FuryLastSpellCast = GetTime()
