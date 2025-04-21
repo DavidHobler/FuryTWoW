@@ -1,5 +1,5 @@
 ## Interface: 11200
-## Title: Fury
+## Title: |cFFFF8080Koudoux|r Fury |cffabd473Turtle-WoW|r
 ## Notes: To make Warrior combat easier.
 ## Author: tperraut (Orig. CubeNicke)
 ## eMail: ths.prt@gmail.com (Orig cubenicke@gmail.com)
