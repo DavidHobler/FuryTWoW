@@ -61,6 +61,8 @@ local function DoUpdateConfiguration(defaults)
         { ABILITY_THUNDER_CLAP_FURY,       true },  -- slow enemies
         { ABILITY_WHIRLWIND_FURY,          true },  -- Fury rotation and aoe
         { ABILITY_REVENGE_FURY,            false }, -- Prot
+        { ABILITY_SUNDER_ARMOR_FURY,        true}, -- Sunder Armor outside Tank Mode
+
 
         { ITEM_CONS_JUJU_CHILL,            true },  -- use on cooldown for bosses with frost dmg
         { ITEM_CONS_JUJU_EMBER,            true },  -- use on cooldown for bosses with fire dmg
