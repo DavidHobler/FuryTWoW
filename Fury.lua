@@ -1952,7 +1952,7 @@ local function Fury_ScanTalents()
         Debug("Bloodthirst")
         FuryBloodthirst = true
     else
-        FuryBloodthirst = false
+        FuryBloodthirst = true
     end
     -- Check for Shield Slam
     local _, _, _, _, currRank = GetTalentInfo(3, 17)
