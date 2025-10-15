@@ -1570,22 +1570,21 @@ function Fury()
                     or not FuryWhirlwind))
             and (UnitHealth("target") / UnitHealthMax("target") * 100) > 20 then
             -- Will try to lessen the amounts of Heroic Strike, when instanct attacks (MS, BT, WW) are enabled
-            -- Hamstring
-            if Fury_Configuration[ABILITY_HAMSTRING_FURY]
-                and HasWeapon()
-                and UnitMana("player") >= HamstringCost()
-                and UnitMana("player") >= tonumber(Fury_Configuration["FlurryTriggerRage"])
-                and ((FuryFlurry
-                        and not HasBuff("player", "Ability_GhoulFrenzy"))
-                    or FuryImpHamstring
-                    or FurySwordSpec
-                    or FuryMaceSpec)
-                and IsSpellReady(ABILITY_HAMSTRING_FURY) then
-                -- Try trigger...
-                -- stun,imp attack speed, extra swing
-                Debug("51. Hamstring (Trigger ...)")
-                CastSpellByName(ABILITY_HAMSTRING_FURY)
-                FuryLastSpellCast = GetTime()
+            -- Hamstring (Flurry/Spec trigger)
+            elseif Fury_Configuration[ABILITY_HAMSTRING_FURY]
+              and HasWeapon()
+              and UnitMana("player") >= HamstringCost()
+              and UnitMana("player") >= tonumber(Fury_Configuration["FlurryTriggerRage"])
+              and ((FuryFlurry and not HasBuff("player", "Ability_GhoulFrenzy"))
+                   or FuryImpHamstring
+                   or FurySwordSpec
+                   or FuryMaceSpec
+                   or FuryWeaponSpec)
+              and IsSpellReady(ABILITY_HAMSTRING_FURY) then
+              -- Try trigger... stun, imp attack speed, extra swing
+              Debug("51. Hamstring (Trigger ...)")
+              CastSpellByName(ABILITY_HAMSTRING_FURY)
+              FuryLastSpellCast = GetTime()
 
                 -- Heroic Strike
             elseif Fury_Configuration[ABILITY_HEROIC_STRIKE_FURY]
@@ -1835,152 +1834,113 @@ local function Fury_Charge()
         end
     end
 end
+-- Build a case-insensitive map: talent name -> current rank (only >0 stored)
+local function Fury_BuildTalentIndex()
+  local tmap = {}
+  local numTabs = GetNumTalentTabs()
+  for tab = 1, numTabs do
+    local numTalents = GetNumTalents(tab)
+    for i = 1, numTalents do
+      local name, _, _, _, currRank = GetTalentInfo(tab, i)
+      if name and currRank and currRank > 0 then
+        tmap[string.lower(name)] = currRank
+      end
+    end
+  end
+  return tmap
+end
 
+-- Return rank if any alias matches (case-insensitive)
+local function Fury_TalentRank(tmap, ...)
+  for i = 1, select("#", ...) do
+    local key = string.lower((select(i, ...)))
+    local r = tmap[key]
+    if r and r > 0 then return r end
+  end
+  return 0
+end
+
+-- True if rank > 0 for any alias
+local function Fury_HasTalent(tmap, ...)
+  return Fury_TalentRank(tmap, ...) > 0
+end
 --------------------------------------------------
 -- Scan spell book and talents
 local function Fury_ScanTalents()
-    local i = 1
-    Debug("Scanning Spell Book")
-    while true do
-        local spellName, spellRank = GetSpellName(i, BOOKTYPE_SPELL)
-        if not spellName then
-            break
-        end
-        if spellName == ABILITY_BERSERKER_STANCE_FURY then
-            FuryBerserkerStance = true
-            Debug(ABILITY_BERSERKER_STANCE_FURY)
-        elseif spellName == ABILITY_DEFENSIVE_STANCE_FURY then
-            FuryDefensiveStance = true
-            Debug(ABILITY_DEFENSIVE_STANCE_FURY)
-        end
-        i = i + 1
-    end
-    Debug("Scanning Talent Tree")
-    -- Calculate the cost of Heroic Strike based on talents
-    local _, _, _, _, currRank = GetTalentInfo(1, 1)
-    FuryHeroicStrikeCost = (15 - tonumber(currRank))
-    if FuryHeroicStrikeCost < 15 then
-        Debug("Heroic Cost")
-    end
-    -- Calculate the rage retainment of Tactical Mastery
-    local _, _, _, _, currRank = GetTalentInfo(1, 2)
-    FuryTacticalMastery = (tonumber(currRank) * 5)
-    if FuryTacticalMastery > 0 then
-        Debug("Tactical Mastery")
-    end
-    local _, _, _, _, currRank = GetTalentInfo(1, 6)
-    FuryThunderClapCost = (20 - tonumber(currRank))
-    if FuryThunderClapCost < 20 then
-        Debug("Improved Thunder Clap")
-    end
-    -- Check for Sweeping Strikes
-    local _, _, _, _, currRank = GetTalentInfo(1, 13)
-    if currRank > 0 then
-        Debug("Sweeping Strikes")
-        FurySweepingStrikes = true
-    else
-        FurySweepingStrikes = false
-    end
-    -- Check for Mace Specializaton
-    local _, _, _, _, currRank = GetTalentInfo(1, 12)
-    if currRank > 0 then
-        Debug("Mace Specializaton")
-        FuryMaceSpec = true
-    else
-        FuryMaceSpec = false
-    end
-    -- Check for Sword Specializaton
-    local _, _, _, _, currRank = GetTalentInfo(1, 12)
-    if currRank > 0 then
-        Debug("Sword Specializaton")
-        FurySwordSpec = true
-    else
-        FurySwordSpec = false
-    end
-    -- Check for Improved Hamstring
-    -- local _, _, _, _, currRank = GetTalentInfo(1, 17)
-    ---if currRank > 0 then
-    --    Debug("Improved Hamstring")
-    FuryImpHamstring = true
-    --else
-    FuryImpHamstring = false
-    --end
-    -- Check for Mortal Strike
-    local _, _, _, _, currRank = GetTalentInfo(1, 18)
-    if currRank > 0 then
-        Debug("Mortal Strike")
-        FuryMortalStrike = true
-    else
-        FuryMortalStrike = false
-    end
-    -- Check for Piercing Howl
-    local _, _, _, _, currRank = GetTalentInfo(2, 6)
-    if currRank > 0 then
-        Debug("Piercing Howl")
-        FuryPiercingHowl = true
-    else
-        FuryPiercingHowl = false
-    end
+  Debug("Scanning Spell Book")
+  -- Actives: detect by spellbook using ABILITY_* constants from Localization.lua
+  FuryBerserkerStance = (SpellId(ABILITY_BERSERKER_STANCE_FURY) ~= nil)
+  FuryDefensiveStance = (SpellId(ABILITY_DEFENSIVE_STANCE_FURY) ~= nil)
+  FuryWhirlwind       = (SpellId(ABILITY_WHIRLWIND_FURY) ~= nil)
 
-    -- Does not change on twow
+  -- Talented actives: stable via spell IDs regardless of tree layout
+  FurySweepingStrikes = (SpellId(ABILITY_SWEEPING_STRIKES_FURY) ~= nil)
+  FuryMortalStrike    = (SpellId(ABILITY_MORTAL_STRIKE_FURY) ~= nil)
+  FuryPiercingHowl    = (SpellId(ABILITY_PIERCING_HOWL_FURY) ~= nil)
+  FuryBloodthirst     = (SpellId(ABILITY_BLOODTHIRST_FURY) ~= nil)
+  FuryShieldSlam      = (SpellId(ABILITY_SHIELD_SLAM_FURY) ~= nil)
+  FuryDeathWish       = (SpellId(ABILITY_DEATH_WISH_FURY) ~= nil)
+
+  Debug("Scanning Talent Tree")
+  local tmap = Fury_BuildTalentIndex()
+
+  -- Cost/retention passives (read by name, not grid position)
+  local impHS = Fury_TalentRank(tmap, "Improved Heroic Strike", "Heroic Strike Specialization")
+  FuryHeroicStrikeCost = 15 - impHS
+  if FuryHeroicStrikeCost < 15 then Debug("Heroic Cost") end
+  FuryTacticalMastery = 5 * Fury_TalentRank(tmap, "Tactical Mastery")
+  if FuryTacticalMastery > 0 then Debug("Tactical Mastery") end
+  local impTC = Fury_TalentRank(tmap, "Improved Thunder Clap")
+  FuryThunderClapCost = 20 - impTC
+  if FuryThunderClapCost < 20 then Debug("Improved Thunder Clap") end
+
+  -- Execute cost (if talent exists on Turtle; else default 15)
+  local impExecute = Fury_TalentRank(tmap, "Improved Execute")
+  if impExecute > 0 then
+    FuryExecuteCost = 15 - math.floor(impExecute * 2.5 + 1e-6)
+    Debug("Execute Cost")
+  else
     FuryExecuteCost = 15
+  end
 
-    local _, _, _, _, currRank = GetTalentInfo(2, 12)
-    if currRank > 0 then
-        Debug("Death Wish")
-        FuryDeathWish = true
-    else
-        FuryDeathWish = false
-    end
+  -- Passives / procs referenced elsewhere
+  FuryFlurry        = Fury_HasTalent(tmap, "Flurry")
+  FuryImpHamstring  = Fury_HasTalent(tmap, "Improved Hamstring", "Hamstring Mastery")
+  FuryMaceSpec      = Fury_HasTalent(tmap, "Mace Specialization")
+  FurySwordSpec     = Fury_HasTalent(tmap, "Sword Specialization")
+  -- Turtle often uses a unified specialization talent; include aliases:
+  FuryWeaponSpec    = Fury_HasTalent(tmap, "Weapon Specialization", "Weapons Specialization", "Weapon Mastery")
 
-    -- TODO style something ?
-    FuryBerserkerRage = false
+  if FuryFlurry       then Debug("Flurry") end
+  if FuryImpHamstring then Debug("Improved Hamstring") end
+  if FuryMaceSpec     then Debug("Mace Specializaton") end
+  if FurySwordSpec    then Debug("Sword Specializaton") end
+  if FuryWeaponSpec   then Debug("Weapon Specialization") end
+  -- Berserker Rage improvements (talented effect on Turtle)
+  FuryBerserkerRage = Fury_HasTalent(tmap, "Improved Berserker Rage")
+  if FuryBerserkerRage then Debug("Improved Berserker Rage") end
 
-    local fname, _, _, _, currRank = GetTalentInfo(2, 14)
-    Debug(tostring(fname))
-    if currRank > 0 then
-        Debug("Flurry")
-        FuryFlurry = true
-    else
-        FuryFlurry = false
-    end
+  -- Racials (unchanged)
+  if UnitRace("player") == RACE_ORC   then FuryRacialBloodFury  = true else FuryRacialBloodFury  = false end
+  if UnitRace("player") == RACE_TROLL then FuryRacialBerserking = true else FuryRacialBerserking = false end
 
-    -- Check for Bloodthirst
-    local blName, _, _, _, currRank = GetTalentInfo(2, 16)
-    Debug(tostring(blName))
-    if currRank > 0 then
-        Debug("Bloodthirst")
-        FuryBloodthirst = true
-    else
-        FuryBloodthirst = true
+  FuryTalents = true
+end
+``
+-- Debug utility: list current talents (names are localized to the client)
+local function Fury_DebugListTalents()
+  local numTabs = GetNumTalentTabs()
+  for tab = 1, numTabs do
+    local tabName = GetTalentTabInfo(tab)
+    Print("[" .. (tabName or "?") .. "]")
+    local numTalents = GetNumTalents(tab)
+    for i = 1, numTalents do
+      local name, _, _, _, currRank, maxRank = GetTalentInfo(tab, i)
+      if name then
+        Print(("- %s : %s/%s"):format(name, tostring(currRank or 0), tostring(maxRank or 0)))
+      end
     end
-    -- Check for Shield Slam
-    local _, _, _, _, currRank = GetTalentInfo(3, 17)
-    if currRank > 0 then
-        Debug("Shield Slam")
-        FuryShieldSlam = true
-    else
-        FuryShieldSlam = false
-    end
-    if UnitRace("player") == RACE_ORC then
-        Debug("Blood Fury")
-        FuryRacialBloodFury = true
-    else
-        FuryRacialBloodFury = false
-    end
-    if UnitRace("player") == RACE_TROLL then
-        Debug("Berserking")
-        FuryRacialBerserking = true
-    else
-        FuryRacialBerserking = false
-    end
-    if SpellId("Whirlwind") then
-        Debug("Whirlwind")
-        FuryWhirlwind = true
-    else
-        FuryWhirlwind = false
-    end
-    FuryTalents = true
+  end
 end
 
 --------------------------------------------------
@@ -2107,7 +2067,7 @@ function Fury_SlashCommand(msg)
                     Fury_Configuration[ABILITY_CLEAVE_FURY] = true
                     Print(ABILITY_CLEAVE_FURY .. " " .. TEXT_FURY_ENABLED .. ".")
                     if Fury_Configuration[ABILITY_HEROIC_STRIKE_FURY] then
-                        Fury_Configuration[ABILITY_HEROIC_STRIKE_FURY] = falses
+                        Fury_Configuration[ABILITY_HEROIC_STRIKE_FURY] = false
                         Print(ABILITY_HEROIC_STRIKE_FURY .. " " .. TEXT_FURY_DISABLED .. ".")
                     end
                 elseif Fury_Configuration[options] then
@@ -2379,14 +2339,18 @@ function Fury_SlashCommand(msg)
             end
         },
 
-        ["talents"] = {
-            help = HELP_TALENTS,
-            fn = function(options)
-                Print(CHAT_TALENTS_RESCAN_FURY)
-                Fury_InitDistance()
-                Fury_ScanTalents()
-            end
-        },
+            ["talents"] = { help = HELP_TALENTS, fn = function(options)
+              Print(CHAT_TALENTS_RESCAN_FURY)
+              Fury_InitDistance()
+              Fury_ScanTalents()
+            
+              -- Show the current talent names/ranks when:
+              --   a) Debug mode is ON (/fury debug), or
+              --   b) you pass "list" as an argument:  /fury talents list
+              if Fury_Configuration["Debug"] or (options and string.lower(options) == "list") then
+                Fury_DebugListTalents()
+              end
+            end },
 
         ["threat"] = {
             help = HELP_THREAT,
