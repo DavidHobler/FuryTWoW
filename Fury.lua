@@ -1979,7 +1979,7 @@ local function Fury_ScanTalents()
         FuryWhirlwind = false
     end
     FuryTalents = true
-end
+    end
 
 --------------------------------------------------
 --
@@ -1999,7 +1999,7 @@ local function SetOptionRange(option, text, value, vmin, vmax)
         value = Fury_Configuration[option]
     end
     Print(text .. value .. ".")
-end
+    end
 
 --------------------------------------------------
 -- Print option if it is enabled
@@ -2007,7 +2007,7 @@ local function PrintEnabledOption(option, text)
     if Fury_Configuration[option] == true then
         Print(text .. " " .. TEXT_FURY_ENABLED .. ".")
     end
-end
+    --end
 
 --------------------------------------------------
 -- Helper to toggle option
