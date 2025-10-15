@@ -465,13 +465,9 @@ local function HasBuff(unit, texturename)
 end
 --------------------------------------------------
 -- Detect if unit has buff id
+-- Vanilla/Turtle (1.12) UnitBuff does not return spellId; keep this a no-op
 local function HasBuffId(unit, spellId)
-    for i = 1, 40 do
-        if select(11, UnitBuff(unit, i)) == spellid then
-            return true
-        end
-    end
-    return nil
+  return nil
 end
 
 --------------------------------------------------
@@ -1852,18 +1848,25 @@ end
 
 -- Return rank if any alias matches (case-insensitive)
 local function Fury_TalentRank(tmap, ...)
-  for i = 1, select("#", ...) do
-    local key = string.lower((select(i, ...)))
-    local r = tmap[key]
-    if r and r > 0 then return r end
+  local n = arg and arg.n or 0
+  for i = 1, n do
+    local alias = arg[i]
+    if alias and alias ~= '' then
+      local key = string.lower(alias)
+      local r = tmap[key]
+      if r and r > 0 then return r end
+    end
   end
   return 0
 end
 
 -- True if rank > 0 for any alias
 local function Fury_HasTalent(tmap, ...)
-  return Fury_TalentRank(tmap, ...) > 0
+  -- Lua 5.0: cannot forward '...' directly; use unpack(arg) instead
+  local r = Fury_TalentRank(tmap, unpack(arg)) or 0
+  return r ~= 0
 end
+
 --------------------------------------------------
 -- Scan spell book and talents
 local function Fury_ScanTalents()
@@ -1926,7 +1929,6 @@ local function Fury_ScanTalents()
 
   FuryTalents = true
 end
-``
 -- Debug utility: list current talents (names are localized to the client)
 local function Fury_DebugListTalents()
   local numTabs = GetNumTalentTabs()
@@ -1937,7 +1939,8 @@ local function Fury_DebugListTalents()
     for i = 1, numTalents do
       local name, _, _, _, currRank, maxRank = GetTalentInfo(tab, i)
       if name then
-        Print(("- %s : %s/%s"):format(name, tostring(currRank or 0), tostring(maxRank or 0)))
+        --Print(("- %s : %s/%s"):format(name, tostring(currRank or 0), tostring(maxRank or 0)))
+		Print(string.format("- %s : %s/%s", name, tostring(currRank or 0), tostring(maxRank or 0)))
       end
     end
   end
@@ -2173,9 +2176,9 @@ function Fury_SlashCommand(msg)
         },
 
         ["default"] = {
-            help = HEL_DEFAULT,
+            help = HELP_DEFAULT,
             fn = function(options)
-                UpdateConfiguration(true) -- Set configurtion to default
+                DoUpdateConfiguration(true) -- Set configuration to default
             end
         },
 
