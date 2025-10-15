@@ -1624,7 +1624,7 @@ function Fury()
             FuryRageDumped = true
         end
     end
-end
+--end
 
 --------------------------------------------------
 --
@@ -1969,7 +1969,7 @@ local function PrintEnabledOption(option, text)
     if Fury_Configuration[option] == true then
         Print(text .. " " .. TEXT_FURY_ENABLED .. ".")
     end
-end
+    end
 
 --------------------------------------------------
 -- Helper to toggle option
