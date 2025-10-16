@@ -715,7 +715,7 @@ local function IsEquippedAndReady(slot, name)
 end
 --------------------------------------------------
 
-local function CheckCooldown(slot)
+ function CheckCooldown(slot)
     local start, duration = GetInventoryItemCooldown("player", slot)
     if duration > 30 then
         -- Alllow duration for 30 seconds since it's when you equip the item
@@ -1567,7 +1567,7 @@ function Fury()
             --and (UnitHealth("target") / UnitHealthMax("target") * 100) > 20 then
             -- Will try to lessen the amounts of Heroic Strike, when instanct attacks (MS, BT, WW) are enabled
             -- Hamstring (Flurry/Spec trigger)
-            elseif Fury_Configuration[ABILITY_HAMSTRING_FURY]
+            if Fury_Configuration[ABILITY_HAMSTRING_FURY]
               and HasWeapon()
               and UnitMana("player") >= HamstringCost()
               and UnitMana("player") >= tonumber(Fury_Configuration["FlurryTriggerRage"])
@@ -1620,7 +1620,7 @@ function Fury()
             FuryRageDumped = true
         end
     end
---end
+end
 
 --------------------------------------------------
 --
@@ -2666,7 +2666,7 @@ function Fury_OnEvent(event)
             FuryCombatTotal = 0
         end
         for slot = 1, 18 do
-            local name = CheckCooldown(slot)
+            local name = _G.CheckCooldown(slot)
             if name then
                 Print(name .. " " .. CHAT_IS_ON_CD_FURY)
             end
