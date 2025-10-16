@@ -1563,7 +1563,7 @@ function Fury()
                 and ((Fury_Configuration[ABILITY_WHIRLWIND_FURY]
                         and not IsSpellReady(ABILITY_WHIRLWIND_FURY))
                     or not Fury_Configuration[ABILITY_WHIRLWIND_FURY]
-                    or not FuryWhirlwind))
+                    or not FuryWhirlwind)) then
             --and (UnitHealth("target") / UnitHealthMax("target") * 100) > 20 then
             -- Will try to lessen the amounts of Heroic Strike, when instanct attacks (MS, BT, WW) are enabled
             -- Hamstring (Flurry/Spec trigger)
