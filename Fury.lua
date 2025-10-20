@@ -30,9 +30,9 @@ local function DoUpdateConfiguration(defaults)
         { "InstantBuildTime",              2 },     -- Set the time to spend building rage for upcoming 31 point instant attacks
         { "MaximumRage",                   60 },    -- Set this to the maximum amount of rage allowed when using abilities to increase rage
         { "NextAttackRage",                30 },    -- Set this to the minimum rage to have to use next attack abilities (Cleave and Heroic Strike)
-        { "StanceChangeRage",              0 },    -- Set this to the amount of rage allowed to be wasted when switching stances
+        { "StanceChangeRage",              0 },     -- Set this to the amount of rage allowed to be wasted when switching stances
         { "PrimaryStance",                 false }, -- Set this to the stance to fall back to after performing an attack requiring another stance
-
+		{ "BTPrioritizeOverExecute", 	   true },  -- Prioritize Bloodthirst over Execute when rage is between 30-60
         { MODE_HEADER_PROT,                false }, -- Use threat and defensive abilities
         { MODE_HEADER_AOE,                 false }, -- Disable auto use of aoe (Disables OP, HS, BT, Exe, Enablse Cleave, Whirlwind)
         { MODE_HEADER_DEBUFF,              false }, -- use cures when player have a debuff
@@ -61,8 +61,8 @@ local function DoUpdateConfiguration(defaults)
         { ABILITY_THUNDER_CLAP_FURY,       true },  -- slow enemies
         { ABILITY_WHIRLWIND_FURY,          true },  -- Fury rotation and aoe
         { ABILITY_REVENGE_FURY,            false }, -- Prot
-        { ABILITY_SUNDER_ARMOR_FURY,       true }, -- Sunder Armor outside Tank Mode
-		{ ABILITY_SHIELD_BLOCK_FURY, 	   true }, -- Shield Block inside Tank Mode
+        { ABILITY_SUNDER_ARMOR_FURY,       true },  -- Sunder Armor outside Tank Mode
+		{ ABILITY_SHIELD_BLOCK_FURY, 	   true },  -- Shield Block inside Tank Mode
 
         { ITEM_CONS_JUJU_CHILL,            true },  -- use on cooldown for bosses with frost dmg
         { ITEM_CONS_JUJU_EMBER,            true },  -- use on cooldown for bosses with fire dmg
@@ -983,7 +983,12 @@ function Fury()
                     FuryDanceDone = true
                 end
             end
-            CastSpellByName(ABILITY_EXECUTE_FURY)
+
+			if Fury_Configuration["BTPrioritizeOverExecute"] and UnitMana("player") >= 30 and UnitMana("player") <= 60 and IsSpellReady(ABILITY_BLOODTHIRST_FURY) then
+				Debug("Skipping Execute in favor of Bloodthirst due to BT priority setting")
+			else
+				CastSpellByName(ABILITY_EXECUTE_FURY)
+			end
             FuryLastSpellCast = GetTime()
 
             -- Overpower when available
@@ -2082,6 +2087,19 @@ function Fury_SlashCommand(msg)
                 end
             end
         },
+
+		["btoverexecute"] = {
+			help = "Toggle prioritizing Bloodthirst over Execute when rage is between 30-60.",
+			fn = function(options)
+				local current = Fury_Configuration["BTPrioritizeOverExecute"]
+				Fury_Configuration["BTPrioritizeOverExecute"] = not current
+				if Fury_Configuration["BTPrioritizeOverExecute"] then
+					Print("Bloodthirst is now prioritized over Execute between 30-60 rage.")
+				else
+					Print("Execute is now prioritized over Bloodthirst.")
+				end
+			end
+		},
 
         ["aoe"] = {
             help = HELP_AOE,
