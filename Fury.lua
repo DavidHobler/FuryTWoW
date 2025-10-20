@@ -21,16 +21,16 @@ local function DoUpdateConfiguration(defaults)
         { "DeathWishHealth",               60 },    -- Set this to the minimum percent of health to have when using Death Wish
         { "Debug",                         false }, -- Set to true to enable debugging feedback
         { "DebugChannel",                  nil },   -- Channel to log to
-        { "DemoDiff",                      7 },     -- When level difference is greater don't do Demoralizing Shout
+        { "DemoDiff",                      0 },     -- When level difference is greater don't do Demoralizing Shout
         { "Enabled",                       true },  -- Set to false to disable the addon
         { "ExecuteSwap",                   false }, -- Swap weapon at execute
         { "ExecuteSwapped",                false }, -- If execute outfit is equipped
         { "FlurryTriggerRage",             52 },    -- Set this to the minimum rage to use Hamtring to trigger Flurry
-        { "HamstringHealth",               40 },    -- Set this to the maximum percent of health allowed when using Hamstring on NPCs
+        { "HamstringHealth",               20 },    -- Set this to the maximum percent of health allowed when using Hamstring on NPCs
         { "InstantBuildTime",              2 },     -- Set the time to spend building rage for upcoming 31 point instant attacks
         { "MaximumRage",                   60 },    -- Set this to the maximum amount of rage allowed when using abilities to increase rage
         { "NextAttackRage",                30 },    -- Set this to the minimum rage to have to use next attack abilities (Cleave and Heroic Strike)
-        { "StanceChangeRage",              25 },    -- Set this to the amount of rage allowed to be wasted when switching stances
+        { "StanceChangeRage",              0 },    -- Set this to the amount of rage allowed to be wasted when switching stances
         { "PrimaryStance",                 false }, -- Set this to the stance to fall back to after performing an attack requiring another stance
 
         { MODE_HEADER_PROT,                false }, -- Use threat and defensive abilities
@@ -61,8 +61,8 @@ local function DoUpdateConfiguration(defaults)
         { ABILITY_THUNDER_CLAP_FURY,       true },  -- slow enemies
         { ABILITY_WHIRLWIND_FURY,          true },  -- Fury rotation and aoe
         { ABILITY_REVENGE_FURY,            false }, -- Prot
-        { ABILITY_SUNDER_ARMOR_FURY,        true}, -- Sunder Armor outside Tank Mode
-
+        { ABILITY_SUNDER_ARMOR_FURY,       true }, -- Sunder Armor outside Tank Mode
+		{ ABILITY_SHIELD_BLOCK_FURY, 	   true }, -- Shield Block inside Tank Mode
 
         { ITEM_CONS_JUJU_CHILL,            true },  -- use on cooldown for bosses with frost dmg
         { ITEM_CONS_JUJU_EMBER,            true },  -- use on cooldown for bosses with fire dmg
@@ -1012,67 +1012,52 @@ function Fury()
                 FuryLastSpellCast = GetTime()
             end
 
-            -- Pummel if casting
-        elseif Fury_Configuration[ABILITY_PUMMEL_FURY]
-            and FurySpellInterrupt
-            and UnitMana("player") >= 10
-            and (not UnitIsPlayer("target")
-                or (UnitIsPlayer("target")
-                    and (UnitClass("target") ~= CLASS_ROGUE_FURY
-                        and UnitClass("target") ~= CLASS_WARRIOR_FURY
-                        and UnitClass("target") ~= CLASS_HUNTER_FURY)))
-            and (GetActiveStance() == 3
-                or (UnitMana("player") <= (FuryTacticalMastery + Fury_Configuration["StanceChangeRage"])
-                    and Fury_Configuration["PrimaryStance"] ~= 0))
-            and IsSpellReady(ABILITY_PUMMEL_FURY) then
-            if GetActiveStance() ~= 3 then
-                Debug("13. Berserker Stance (Pummel)")
-                if not FuryOldStance then
-                    FuryOldStance = GetActiveStance()
-                end
-                FuryLastSpellCast = GetTime()
-                if UnitName("target") == BOSS_NAX_KEL_THUZAD_FURY then
-                    SendChatMessage(CHAT_KICKED_FURY, "SAY", "common")
-                end
-                DoShapeShift(3)
-            else
-                Debug("13. Pummel")
-            end
-            CastSpellByName(ABILITY_PUMMEL_FURY)
-            if UnitName("target") == BOSS_NAX_KEL_THUZAD_FURY then
-                SendChatMessage(CHAT_KICKED_FURY, "SAY", "common")
-            end
+-- Shield Bash (Tank Mode interrupt)
+elseif Fury_Configuration[MODE_HEADER_PROT]
+    and Fury_Configuration[ABILITY_SHIELD_BASH_FURY]
+    and FurySpellInterrupt
+    and HasShield()
+    and GetActiveStance() == 2
+    and UnitMana("player") >= 10
+    and IsSpellReady(ABILITY_SHIELD_BASH_FURY) then
+    Debug("Tank Mode Interrupt: Shield Bash")
+    CastSpellByName(ABILITY_SHIELD_BASH_FURY)
+    FuryLastSpellCast = GetTime()
+    FuryDanceDone = true
+    if UnitName("target") == BOSS_NAX_KEL_THUZAD_FURY then
+        SendChatMessage(CHAT_KICKED_FURY, "SAY", "common")
+    end
 
-            -- Shield bash to interrupt
-        elseif Fury_Configuration[ABILITY_SHIELD_BASH_FURY]
-            and FurySpellInterrupt
-            and not Fury_Configuration[MODE_HEADER_AOE]
-            and UnitMana("player") >= 10
-            and HasShield()
-            and (not UnitIsPlayer("target")
-                or (UnitIsPlayer("target")
-                    and (UnitClass("target") ~= CLASS_ROGUE_FURY
-                        and UnitClass("target") ~= CLASS_WARRIOR_FURY
-                        and UnitClass("target") ~= CLASS_HUNTER_FURY)))
-            and (GetActiveStance() ~= 3
-                or (UnitMana("player") <= (FuryTacticalMastery + Fury_Configuration["StanceChangeRage"])))
-            and IsSpellReady(ABILITY_SHIELD_BASH_FURY) then
-            if GetActiveStance() == 3 then
-                if not FuryOldStance then
-                    FuryOldStance = GetActiveStance()
-                end
-                Debug("14. Battle Stance (Shield Bash)")
-                DoShapeShift(1)
-                CastSpellByName(ABILITY_SHIELD_BASH_FURY)
-            else
-                Debug("14. Shield Bash (interrupt)")
-            end
-            FuryDanceDone = true
-            CastSpellByName(ABILITY_SHIELD_BASH_FURY)
-            FuryLastSpellCast = GetTime()
-            if UnitName("target") == BOSS_NAX_KEL_THUZAD_FURY then
-                SendChatMessage(CHAT_KICKED_FURY, "SAY", "common")
-            end
+-- Pummel (fallback interrupt)
+elseif Fury_Configuration[ABILITY_PUMMEL_FURY]
+    and FurySpellInterrupt
+    and UnitMana("player") >= 10
+    and (not UnitIsPlayer("target")
+        or (UnitIsPlayer("target")
+            and (UnitClass("target") ~= CLASS_ROGUE_FURY
+                and UnitClass("target") ~= CLASS_WARRIOR_FURY
+                and UnitClass("target") ~= CLASS_HUNTER_FURY)))
+    and (GetActiveStance() == 3
+        or (UnitMana("player") <= (FuryTacticalMastery + Fury_Configuration["StanceChangeRage"])
+            and Fury_Configuration["PrimaryStance"] ~= 0))
+    and IsSpellReady(ABILITY_PUMMEL_FURY) then
+    if GetActiveStance() ~= 3 then
+        Debug("13. Berserker Stance (Pummel)")
+        if not FuryOldStance then
+            FuryOldStance = GetActiveStance()
+        end
+        FuryLastSpellCast = GetTime()
+        if UnitName("target") == BOSS_NAX_KEL_THUZAD_FURY then
+            SendChatMessage(CHAT_KICKED_FURY, "SAY", "common")
+        end
+        DoShapeShift(3)
+    else
+        Debug("13. Pummel")
+    end
+    CastSpellByName(ABILITY_PUMMEL_FURY)
+    if UnitName("target") == BOSS_NAX_KEL_THUZAD_FURY then
+        SendChatMessage(CHAT_KICKED_FURY, "SAY", "common")
+    end
 
             -- Cast hamstring to stop runners
         elseif Fury_Configuration[ABILITY_HAMSTRING_FURY]
@@ -1311,6 +1296,40 @@ function Fury()
             CastSpellByName(ABILITY_SHIELD_SLAM_FURY)
             FuryLastSpellCast = GetTime()
 
+            -- Shield Block
+        elseif Fury_Configuration[ABILITY_SHIELD_BLOCK_FURY]
+            and HasShield()
+            and FuryCombat
+            and GetActiveStance() == 2
+            and UnitName("targettarget") == UnitName("player")
+            and UnitLevel("Target") > UnitLevel("Player") - Fury_Configuration["DemoDiff"]
+            and UnitMana("player") >= 10
+            and IsSpellReady(ABILITY_SHIELD_BLOCK_FURY) then
+            Debug("32. Shield Block")
+            CastSpellByName(ABILITY_SHIELD_BLOCK_FURY)
+			
+			-- Thunder Clap (Prot only, if debuff missing)
+        elseif Fury_Configuration[MODE_HEADER_PROT]
+            and Fury_Configuration[ABILITY_THUNDER_CLAP_FURY]
+            and GetActiveStance() == 2
+            and FuryCombat
+            and Fury_Distance() <= 8
+            and not HasDebuff("target", "Spell_Nature_ThunderClap")
+            and UnitMana("player") >= 30
+            and IsSpellReady(ABILITY_THUNDER_CLAP_FURY) then
+            Debug("Prot: Thunder Clap")
+            CastSpellByName(ABILITY_THUNDER_CLAP_FURY)
+            FuryLastSpellCast = GetTime()
+
+            -- Revenge
+        elseif Fury_Configuration[ABILITY_REVENGE_FURY]
+            and FuryCombat
+            and UnitMana("player") >= 5
+            and FuryRevengeReadyUntil > GetTime()
+            and IsSpellReady(ABILITY_REVENGE_FURY) then
+            Debug("30. Revenge")
+            CastSpellByName(ABILITY_REVENGE_FURY)
+			
             -- Sunder Armor (until 5)
         elseif Fury_Configuration[ABILITY_SUNDER_ARMOR_FURY]
             and not HasDebuff("target", "Ability_Warrior_Sunder", 5)
@@ -1346,15 +1365,6 @@ function Fury()
             CastSpellByName(ABILITY_DEMORALIZING_SHOUT_FURY)
             FuryLastSpellCast = GetTime()
 
-            -- Revenge
-        elseif Fury_Configuration[ABILITY_REVENGE_FURY]
-            and FuryCombat
-            and UnitMana("player") >= 5
-            and FuryRevengeReadyUntil > GetTime()
-            and IsSpellReady(ABILITY_REVENGE_FURY) then
-            Debug("30. Revenge")
-            CastSpellByName(ABILITY_REVENGE_FURY)
-
             -- Sunder Armor (Refresh)
         elseif Fury_Configuration[ABILITY_SUNDER_ARMOR_FURY]
             and HasDebuff("target", "Ability_Warrior_Sunder", 5)
@@ -1365,19 +1375,7 @@ function Fury()
             CastSpellByName(ABILITY_SUNDER_ARMOR_FURY)
             FuryLastSunder = GetTime()
             FuryLastSpellCast = GetTime()
-
-            -- Shield Block
-        elseif Fury_Configuration[ABILITY_SHIELD_BLOCK_FURY]
-            and HasShield()
-            and FuryCombat
-            and GetActiveStance() == 2
-            and UnitName("targettarget") == UnitName("player")
-            and UnitLevel("Target") > UnitLevel("Player") - Fury_Configuration["DemoDiff"]
-            and UnitMana("player") >= 10
-            and IsSpellReady(ABILITY_SHIELD_BLOCK_FURY) then
-            Debug("32. Shield Block")
-            CastSpellByName(ABILITY_SHIELD_BLOCK_FURY)
-
+		
             -- Stance dance (part 2)
         elseif FuryDanceDone
             and FuryOldStance
@@ -2228,7 +2226,19 @@ function Fury_SlashCommand(msg)
             end
         },
 
-        ["help"] = { help = HELP_HELP, fn = nil },
+        ["sunderfirst"] = {
+    help = "Toggle always using Sunder Armor first on new target.",
+    fn = function(options)
+        local current = Fury_Configuration["AlwaysSunderFirst"]
+        Fury_Configuration["AlwaysSunderFirst"] = not current
+        if Fury_Configuration["AlwaysSunderFirst"] then
+            Print("Sunder First is now ENABLED")
+        else
+            Print("Sunder First is now DISABLED")
+        end
+    end
+},
+["help"] = { help = HELP_HELP, fn = nil },
 
         ["juju"] = {
             help = HELP_JUJU,
