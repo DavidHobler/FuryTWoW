@@ -121,8 +121,9 @@ To get the correct Icon for the macro, edit the macro file in a text editor **WT
 /fury ability <name> - toggles the use of abilities. Must use correct names with capitalization, ie. Heroic Strike, Rend etc.
 /fury attack - toggles the use of auto select target.
 /fury cons - will report enabled consumables
-/fury smartcleave - will automatically switch to cleave in rage dump phase if more than one enemy is around
+-- not stable yet, removed feature for now: /fury smartcleave - will automatically switch to cleave in rage dump phase if more than one enemy is around
 /fury sunderfirst - will fire sunder as the first ability for a new target
+/fury btoverexecute - will give BT priority in execute phase if between 30 and 60 rage
 ```
 ### Setup commands
 ```
