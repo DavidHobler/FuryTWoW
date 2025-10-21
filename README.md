@@ -32,7 +32,8 @@ To get the correct Icon for the macro, edit the macro file in a text editor **WT
     MACRO 16777224 "Power" INV_Misc_MonsterScales_11
         /fury juju power
     END
-
+Macro for automatically swap weapons while toggleing /fury prot:
+/run local C,P=Fury_Configuration,MODE_HEADER_PROT;local s=((C and P and C[P]) and "Fury") or "Fury Prot";if SlashCmdList and SlashCmdList.OUTFITTER then SlashCmdList.OUTFITTER("wear "..s) end;if SlashCmdList and SlashCmdList.FURY then SlashCmdList.FURY("prot") end
 ## Reference
 
 ### Abilities
