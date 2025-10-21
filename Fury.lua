@@ -1309,7 +1309,8 @@ elseif Fury_Configuration[ABILITY_PUMMEL_FURY]
             and UnitName("targettarget") == UnitName("player")
             and UnitLevel("Target") > UnitLevel("Player") - Fury_Configuration["DemoDiff"]
             and UnitMana("player") >= 10
-            and IsSpellReady(ABILITY_SHIELD_BLOCK_FURY) then
+            and IsSpellReady(ABILITY_SHIELD_BLOCK_FURY)
+			and not (FuryShieldSlam and HasBuff("player", "Ability_Warrior_ShieldMastery")) then
             Debug("32. Shield Block")
             CastSpellByName(ABILITY_SHIELD_BLOCK_FURY)
 			
